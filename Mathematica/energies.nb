@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       154,          7]
-NotebookDataLength[    203910,       4862]
-NotebookOptionsPosition[    193416,       4700]
-NotebookOutlinePosition[    193842,       4717]
-CellTagsIndexPosition[    193799,       4714]
+NotebookDataLength[    205101,       4898]
+NotebookOptionsPosition[    194383,       4732]
+NotebookOutlinePosition[    194806,       4749]
+CellTagsIndexPosition[    194763,       4746]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -4695,11 +4695,43 @@ Cell[BoxData["True"], "Output",
   3.9823888996366463`*^9, {3.9823889299942503`*^9, 3.982388947203621*^9}, 
    3.982389021473876*^9},
  CellLabel->"Out[66]=",ExpressionUUID->"21c539cf-4874-4dcf-b9f6-0c7b543b6310"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"TeXForm", "[", 
+  FractionBox[
+   RowBox[{"K0", " ", 
+    SuperscriptBox["\[Beta]2", "2"]}], 
+   RowBox[{
+    RowBox[{
+     RowBox[{"-", "2"}], " ", 
+     SqrtBox["2"], " ", 
+     SqrtBox[
+      RowBox[{"K0", " ", 
+       SuperscriptBox[
+        RowBox[{"(", 
+         RowBox[{"K0", "+", "K2"}], ")"}], "3"]}]]}], "+", 
+    RowBox[{"2", " ", "K0", " ", 
+     RowBox[{"(", 
+      RowBox[{"K0", "+", 
+       RowBox[{"3", " ", "K2"}]}], ")"}]}]}]], "]"}]], "Input",
+ CellChangeTimes->{{3.98238904175587*^9, 3.982389045099864*^9}},
+ CellLabel->"In[67]:=",ExpressionUUID->"405100f1-8d2e-4383-bd61-04e49a2bdc73"],
+
+Cell["\<\
+\\frac{\\text{$\\beta $2}^2 \\text{K0}}{2 \\text{K0} (\\text{K0}+3 \
+\\text{K2})-2 \\sqrt{2} \\sqrt{\\text{K0} (\\text{K0}+\\text{K2})^3}}\
+\>", "Output",
+ CellChangeTimes->{3.982389045758151*^9},
+ CellLabel->
+  "Out[67]//TeXForm=",ExpressionUUID->"902e0024-893b-49d9-a4f0-5a9948536d3d"]
 }, Open  ]]
 }, Open  ]]
 },
 WindowSize->{2560, 1292},
-WindowMargins->{{0, Automatic}, {Automatic, -323}},
+WindowMargins->{{0, Automatic}, {Automatic, 1}},
 Magnification:>1.25 Inherited,
 FrontEndVersion->"14.3 for Mac OS X ARM (64-bit) (July 8, 2025)",
 StyleDefinitions->"Default.nb",
@@ -4862,6 +4894,10 @@ Cell[CellGroupData[{
 Cell[190042, 4599, 2875, 85, 212, "Input",ExpressionUUID->"7aa52719-bd40-422b-b03a-36eee71978aa"],
 Cell[192920, 4686, 234, 4, 41, "Output",ExpressionUUID->"f54f778c-46e6-4585-a9f5-bafe8b3b468b"],
 Cell[193157, 4692, 231, 4, 41, "Output",ExpressionUUID->"21c539cf-4874-4dcf-b9f6-0c7b543b6310"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[193425, 4701, 630, 19, 67, "Input",ExpressionUUID->"405100f1-8d2e-4383-bd61-04e49a2bdc73"],
+Cell[194058, 4722, 297, 6, 58, "Output",ExpressionUUID->"902e0024-893b-49d9-a4f0-5a9948536d3d"]
 }, Open  ]]
 }, Open  ]]
 }
