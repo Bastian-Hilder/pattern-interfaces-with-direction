@@ -14,7 +14,7 @@ struct TRAJECTORY
     u::Matrix{Float64}  # each column is the state at a time point
 end
 
-function find_heteroclinic_orbit(source::FixedPoint, perturbation::Vector{Float64}, eps::Float64, name::String="", T::Float64=100.0, norm_threshold::Float64=1e2)
+function find_heteroclinic_orbit(source::FixedPoint, perturbation::Vector{Float64}, eps::Float64, name::String="", T::Float64=100.0; norm_threshold::Float64=1e2)
     # Compute unstable subspace at source
     
     coords = vcat(source.coords, zeros(3))  # (A₁, A₂, A₃, B₁, B₂, B₃)
@@ -60,8 +60,8 @@ function shoot_to_most_unstable(fp::FixedPoint, eps::Float64=1e-3)
     else
         println("\n--- Shooting from fixed point: $(fp.name) ---")
         perturbation, _ = most_unstable_direction(fp)
-        traj_plus = find_heteroclinic_orbit(fp, perturbation, eps)
-        traj_minus = find_heteroclinic_orbit(fp, -perturbation, eps)
+        traj_plus = find_heteroclinic_orbit(fp, perturbation, eps;norm_threshold=1e1)
+        traj_minus = find_heteroclinic_orbit(fp, -perturbation, eps;norm_threshold=1e1)
         if traj_plus.exceeded_threshold
             println("Trajectory from $(fp.name) exceeded threshold")
         else

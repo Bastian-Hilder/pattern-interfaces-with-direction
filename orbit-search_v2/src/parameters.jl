@@ -41,13 +41,26 @@ function Params(;
     println("The chosen speed is $(c0) and the critical speed is $(critical_speed(p)).")
     return p
 end
+
+function Base.show(io::IO, p::Params)
+    println(io, "Params:")
+    println(io, "  K0    : $(p.K0)")
+    println(io, "  K2    : $(p.K2)")
+    println(io, "  beta2 : $(p.beta2)")
+    println(io, "  mu0   : $(p.mu0)")
+    println(io, "  c0    : $(p.c0)")
+    println(io, "  theta : $(p.theta*180/π)°")
+    println(io, "  T     : $(p.T)")
+end
+
 # =============================================================================
 
-function kappas(θ)
+function kappas(θ;rotated::Bool=false)
     d  = polar(θ)
-    k1 = polar(0)
-    k2 = polar(2π / 3)
-    k3 = polar(-2π / 3)
+
+    k1 = rotated ? polar(-θ) : polar(0)
+    k2 = rotated ? polar(2π / 3 - θ) : polar(2π / 3)
+    k3 = rotated ? polar(-2π / 3 - θ) : polar(-2π / 3)
 
     κ1 = -1.0 / (4 * dot(d, k1)^2)
     κ2 = -1.0 / (4 * dot(d, k2)^2)
