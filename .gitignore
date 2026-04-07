@@ -47,3 +47,6 @@ dist/
 # Temporary files
 *.tmp
 *.temp
+
+# orbit-search results
+orbit-search_v2/results/
