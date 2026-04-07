@@ -1,7 +1,7 @@
 # Create all visualisations for fixed points and heteroclinic orbits
 using Plots, Interpolations
 
-HIGH_QUALITY = false  # Set to false for quick rendering during development
+HIGH_QUALITY = true  # Set to false for quick rendering during development
 
 DEFAULT_HEIGHT      = HIGH_QUALITY ? 2160 : 1080
 DEFAULT_WIDTH       = HIGH_QUALITY ? 3840 : 1920
@@ -43,11 +43,27 @@ function create_all_fixed_point_images(fps::Vector{FixedPoint},run_info::RunInfo
     println("="^70)
     mkpath(joinpath(run_info.folder, "fixed_points"))
     for fp in fps
-        create_fixed_point_image(fp; filename=joinpath(run_info.folder, "fixed_points", "$(fp.name).png"), vis_param=vis_param)
+        create_fixed_point_image(fp; filename=joinpath(run_info.folder, "fixed_points", "$(fp.name)_$(fp.params.K0)_$(fp.params.K2)_$(fp.params.mu0).png"), vis_param=vis_param)
     end
 end
 
-function create_fixed_point_image(fp::FixedPoint; filename::String, vis_param::visualization_params=VIS_PARAMS)
+
+function create_fp_images(p::Params, mumin::Float64, mumax::Float64, step_size::Float64, run_info::RunInfo, vis_param::visualization_params=VIS_PARAMS)
+    step_size > 0 || throw(ArgumentError("step_size must be positive"))
+    for mu0 in mumin:step_size:mumax
+        p_mu = Params(p.K0, p.K2, p.beta2, mu0, p.c0, p.theta, p.T)
+        try
+            fps = instantiate_fixed_points(p_mu)
+            create_all_fixed_point_images(fps, run_info, vis_param)
+         catch error
+            @warn "Failed to create fixed point images for mu0 = $mu0: $error"
+        end
+    end
+end 
+
+
+
+function create_fixed_point_image(fp::FixedPoint; filename::String, vis_param::visualization_params=VIS_PARAMS,color_bar::Bool=true)
     println("\nCreating image for fixed point: $(fp.name)")
     A1, A2, A3 = fp.coords
     d  = vis_param.domain_size
@@ -56,14 +72,16 @@ function create_fixed_point_image(fp::FixedPoint; filename::String, vis_param::v
     x = LinRange(-d, d, nx)
     y = LinRange(-d, d, ny)
     z = [wavefield_value(A1, A2, A3, Float64(xi), Float64(yi)) for yi in y, xi in x]
+    zmax = maximum(abs.(z))
+    zmax = iszero(zmax) ? 1.0 : zmax  # Avoid division by zero for trivial fixed point
     plt = heatmap(
         collect(x), collect(y), z;
         color        = vis_param.COLOR_MAP,
         aspect_ratio = :equal,
         axis         = false,
-        colorbar     = true,
-        title        = fp.name,
+        colorbar     = color_bar,
         size         = (nx, ny),
+        clim=(-zmax, zmax),
     )
     savefig(plt, filename)
     println("  Saved → $filename")
@@ -97,7 +115,7 @@ function field_moving(A1_itp, A2_itp, A3_itp, p::Params, x, y, t)
     return F
 end
 
-function create_front_image(traj::TRAJECTORY,run_info::RunInfo,time_stamp::Float64 = 0.0, vis_param::visualization_params=VIS_PARAMS_FRONT)
+function create_front_image(traj::TRAJECTORY,run_info::RunInfo,time_stamp::Float64 = 0.0, vis_param::visualization_params=VIS_PARAMS_FRONT,color_bar::Bool=true)
     println("\nCreating front image for trajectory: $(traj.name)")
     A1_itp = linear_interpolation(traj.t, traj.u[1, :])
     A2_itp = linear_interpolation(traj.t, traj.u[2, :])
@@ -111,14 +129,16 @@ function create_front_image(traj::TRAJECTORY,run_info::RunInfo,time_stamp::Float
     x = LinRange(-dw, dw, nx)
     y = LinRange(-dh, dh, ny)
     z = field_moving(A1_itp, A2_itp, A3_itp, p, x, y, time_stamp)
+    zmax = maximum(abs.(z))
+    zmax = iszero(zmax) ? 1.0 : zmax  # Avoid division by zero for trivial fixed point
     plt = heatmap(
         collect(x), collect(y), z;
         color        = vis_param.COLOR_MAP,
-        axis         = false,
-        colorbar     = true,
         aspect_ratio = :equal,
-        title        = traj.name,
+        axis         = false,
+        colorbar     = color_bar,
         size         = (nx, ny),
+        clim=(-zmax, zmax),
     )
     filename = joinpath(run_info.folder, "fronts", "$(traj.name).png")
     mkpath(dirname(filename))
