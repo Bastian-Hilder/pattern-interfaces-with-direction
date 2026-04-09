@@ -56,25 +56,29 @@ end
 function shoot_to_most_unstable(fp::FixedPoint, eps::Float64=1e-3)
     if fp.dimension_unstable == 0
         @warn "Source fixed point has no unstable directions. No orbits to search."
-        return
-    else
-        println("\n--- Shooting from fixed point: $(fp.name) ---")
-        perturbation, _ = most_unstable_direction(fp)
-        traj_plus = find_heteroclinic_orbit(fp, perturbation, eps;norm_threshold=1e1)
-        traj_minus = find_heteroclinic_orbit(fp, -perturbation, eps;norm_threshold=1e1)
-        if traj_plus.exceeded_threshold
-            println("Trajectory from $(fp.name) exceeded threshold")
-        else
-            println("Trajectory from $(fp.name) did not exceed threshold. Create front image.")
-            return traj_plus
-        end
-        if traj_minus.exceeded_threshold
-            println("Trajectory from $(fp.name) exceeded threshold.")
-        else
-            println("Trajectory from $(fp.name) did not exceed threshold. Create front image.")
-            return traj_minus
+        return nothing
+    end
+
+    println("\n--- Shooting from fixed point: $(fp.name) ---")
+    perturbation, _ = most_unstable_direction(fp)
+
+    delta = norm(fp.coords) > 0 ? 0.5 * norm(fp.coords) : 0.05
+
+    # Adaptive threshold: cap at 0.05, but tighten proportionally when eps is small
+    near_zero_threshold = min(0.05, delta)
+
+    for (label, direction) in [("+", perturbation), ("-", -perturbation)]
+        traj = find_heteroclinic_orbit(fp, direction, eps)
+        end_norm = norm(traj.u[:, end])
+        println("  Direction $label: final ‖u‖ = $(round(end_norm, sigdigits=4)) (threshold = $near_zero_threshold)")
+        if end_norm < near_zero_threshold
+            println("  → Converged to trivial state.")
+            return traj
         end
     end
+
+    println("  Neither direction converged to trivial state.")
+    return nothing
 end
 
 # =============================================================================

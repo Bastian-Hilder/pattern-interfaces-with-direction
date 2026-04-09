@@ -1,5 +1,5 @@
 # Create all visualisations for fixed points and heteroclinic orbits
-using Plots, Interpolations
+using Plots, Interpolations, Measures
 
 HIGH_QUALITY = true  # Set to false for quick rendering during development
 
@@ -82,6 +82,7 @@ function create_fixed_point_image(fp::FixedPoint; filename::String, vis_param::v
         axis         = false,
         colorbar     = color_bar,
         size         = (nx, ny),
+        margin       = 0mm,
         clim=(-zmax, zmax),
     )
     savefig(plt, filename)
@@ -116,31 +117,38 @@ function field_moving(A1_itp, A2_itp, A3_itp, p::Params, x, y, t;rotated::Bool=f
     return F
 end
 
-function create_front_image_full(traj::TRAJECTORY, run_info::RunInfo, 
-                             vis_param::visualization_params=VIS_PARAMS_FRONT,
-                             color_bar::Bool=true; rotated::Bool=false)
+# Signed power transform: compresses large values, stretches small ones near zero.
+# gamma < 1 boosts faint oscillations; gamma = 1 is the identity (linear).
+signed_power(z::AbstractMatrix, gamma::Float64) =
+    gamma == 1.0 ? z : sign.(z) .* abs.(z) .^ gamma
+
+function create_front_image_full(traj::TRAJECTORY, run_info::RunInfo,
+                             vis_param::visualization_params=VIS_PARAMS_FRONT;
+                             color_bar::Bool=true,
+                             rotated::Bool=false, gamma::Float64=1.0,
+                             margin::Float64=2π, aspect_ratio::Int=5,
+                             time_stamp::Float64=0.0)
     println("\nCreating front image for trajectory: $(traj.name)")
- 
+
     A1_itp = linear_interpolation(traj.t, traj.u[1, :])
     A2_itp = linear_interpolation(traj.t, traj.u[2, :])
     A3_itp = linear_interpolation(traj.t, traj.u[3, :])
- 
+
     p = traj.source.params
- 
+
     t_min, t_max = extrema(traj.t)
-    L_orbit = (t_max - t_min) / 2.0          # half the orbit length
-    centre  = (t_max + t_min) / 2.0  # centre in x
-    dw      = L_orbit + 2.0     # +2 margin
- 
-    aspect_ratio::Integer = 5
+    x_left  = t_min - margin
+    x_right = t_max + margin
+    dw      = (x_right - x_left) / 2.0
+
     dh  = dw / aspect_ratio
     ny  = vis_param.HEIGHT
     nx  = ny * aspect_ratio
- 
-    x = LinRange(centre - dw, centre + dw, nx)
+
+    x = LinRange(x_left, x_right, nx)
     y = LinRange(-dh, dh, ny)
  
-    z    = field_moving(A1_itp, A2_itp, A3_itp, p, x, y, 0; rotated=rotated)
+    z    = signed_power(field_moving(A1_itp, A2_itp, A3_itp, p, x, y, time_stamp; rotated=rotated), gamma)
     zmax = maximum(abs.(z))
     zmax = iszero(zmax) ? 1.0 : zmax
  
@@ -151,6 +159,7 @@ function create_front_image_full(traj::TRAJECTORY, run_info::RunInfo,
         axis         = false,
         colorbar     = color_bar,
         size         = (nx, ny),
+        margin       = 0mm,
         clim         = (-zmax, zmax),
     )
  
@@ -160,20 +169,81 @@ function create_front_image_full(traj::TRAJECTORY, run_info::RunInfo,
     println("  Saved → $filename")
 end
 
-function create_front_image(traj::TRAJECTORY,run_info::RunInfo,time_stamp::Float64 = 0.0, vis_param::visualization_params=VIS_PARAMS_FRONT,color_bar::Bool=true;rotated::Bool=false)
+# shift > 0 shows more of the left (pattern) side; shift < 0 shows more of the right (trivial) side.
+# shift is expressed as a multiple of the orbit length, e.g. shift=0.5 moves the window half an orbit to the left.
+function create_front_image_shifted(traj::TRAJECTORY, run_info::RunInfo, shift::Float64=0.5,
+                                    vis_param::visualization_params=VIS_PARAMS_FRONT;
+                                    color_bar::Bool=true,
+                                    rotated::Bool=false, gamma::Float64=1.0,
+                                    margin::Float64=2π, aspect_ratio::Int=5,
+                                    time_stamp::Float64=0.0)
+    println("\nCreating shifted front image for trajectory: $(traj.name)")
+
+    A1_itp = linear_interpolation(traj.t, traj.u[1, :])
+    A2_itp = linear_interpolation(traj.t, traj.u[2, :])
+    A3_itp = linear_interpolation(traj.t, traj.u[3, :])
+
+    p = traj.source.params
+
+    t_min, t_max = extrema(traj.t)
+    orbit_length = t_max - t_min
+    # Positive shift moves the window leftward, revealing more of the patterned (left) side
+    x_left  = t_min - margin - shift * orbit_length
+    x_right = t_max + margin - shift * orbit_length
+    dw      = (x_right - x_left) / 2.0
+
+    dh  = dw / aspect_ratio
+    ny  = vis_param.HEIGHT
+    nx  = ny * aspect_ratio
+
+    x = LinRange(x_left, x_right, nx)
+    y = LinRange(-dh, dh, ny)
+
+    z    = signed_power(field_moving(A1_itp, A2_itp, A3_itp, p, x, y, time_stamp; rotated=rotated), gamma)
+    zmax = maximum(abs.(z))
+    zmax = iszero(zmax) ? 1.0 : zmax
+
+    plt = heatmap(
+        collect(x), collect(y), z;
+        color        = vis_param.COLOR_MAP,
+        aspect_ratio = :equal,
+        axis         = false,
+        colorbar     = color_bar,
+        size         = (nx, ny),
+        margin       = 0mm,
+        clim         = (-zmax, zmax),
+    )
+
+    filename = joinpath(run_info.folder, "fronts", "$(traj.name)_shifted.png")
+    mkpath(dirname(filename))
+    savefig(plt, filename)
+    println("  Saved → $filename")
+end
+
+function create_front_image(traj::TRAJECTORY, run_info::RunInfo, time_stamp::Float64=0.0,
+                            vis_param::visualization_params=VIS_PARAMS_FRONT;
+                            color_bar::Bool=true,
+                            rotated::Bool=false, gamma::Float64=1.0,
+                            margin::Float64=2π, aspect_ratio::Int=5)
     println("\nCreating front image for trajectory: $(traj.name)")
     A1_itp = linear_interpolation(traj.t, traj.u[1, :])
     A2_itp = linear_interpolation(traj.t, traj.u[2, :])
-    A3_itp = linear_interpolation(traj.t, traj.u[3, :])    
+    A3_itp = linear_interpolation(traj.t, traj.u[3, :])
     p = traj.source.params
-    aspect_ratio::Integer = 5
-    dh = vis_param.domain_size / aspect_ratio
-    dw = vis_param.domain_size
+
+    # Size the domain to the orbit extent plus margin on each side,
+    # then shift by the co-moving time stamp so the front stays centred.
+    t_min, t_max = extrema(traj.t)
+    x_left  = t_min - margin + p.c0 * time_stamp
+    x_right = t_max + margin + p.c0 * time_stamp
+    dw      = (x_right - x_left) / 2.0
+
+    dh  = dw / aspect_ratio
     ny::Int = vis_param.HEIGHT
-    nx::Int = ny * aspect_ratio  # Adjust width to maintain aspect ratio
-    x = LinRange(-dw, dw, nx)
+    nx::Int = ny * aspect_ratio
+    x = LinRange(x_left, x_right, nx)
     y = LinRange(-dh, dh, ny)
-    z = field_moving(A1_itp, A2_itp, A3_itp, p, x, y, time_stamp; rotated=rotated)
+    z = signed_power(field_moving(A1_itp, A2_itp, A3_itp, p, x, y, time_stamp; rotated=rotated), gamma)
     zmax = maximum(abs.(z))
     zmax = iszero(zmax) ? 1.0 : zmax  # Avoid division by zero for trivial fixed point
     plt = heatmap(
@@ -183,6 +253,7 @@ function create_front_image(traj::TRAJECTORY,run_info::RunInfo,time_stamp::Float
         axis         = false,
         colorbar     = color_bar,
         size         = (nx, ny),
+        margin       = 0mm,
         clim=(-zmax, zmax),
     )
     filename = joinpath(run_info.folder, "fronts", "$(traj.name).png")
@@ -198,4 +269,44 @@ function create_bulk_front_images(orbits::Vector{OrbitScore}, run_info::RunInfo,
     for score in orbits
         create_front_image(score.trajectory, run_info, time_stamp, vis_param, color_bar; rotated=rotated)  # Adjust time offset for better front visualization
     end
+end
+
+# =============================================================================
+# Export trajectory coordinates to .dat files for TikZ plotting
+
+function write_trajectory_dat(traj::TRAJECTORY, run_info::RunInfo)
+    folder = joinpath(run_info.folder, "trajectory_dat", traj.name)
+    mkpath(folder)
+
+    names = ["A1", "A2", "A3", "B1", "B2", "B3"]
+    for (i, coord_name) in enumerate(names)
+        filename = joinpath(folder, "$(coord_name).dat")
+        open(filename, "w") do io
+            println(io, "# t  $(coord_name)")
+            for j in eachindex(traj.t)
+                println(io, "$(traj.t[j])  $(traj.u[i, j])")
+            end
+        end
+        println("  Saved → $filename")
+    end
+    println("Trajectory .dat files written to $folder")
+end
+
+function plot_amplitudes(traj::TRAJECTORY, run_info::RunInfo)
+    t  = traj.t
+    A1 = traj.u[1, :]
+    A2 = traj.u[2, :]
+    A3 = traj.u[3, :]
+
+    plt = plot(t, A1; label="A₁", color=:blue,   linewidth=2,
+               xlabel="t", ylabel="Amplitude",
+               title=traj.name, legend=:topright,
+               size=(DEFAULT_WIDTH, DEFAULT_HEIGHT ÷ 3))
+    plot!(plt, t, A2; label="A₂", color=:red,    linewidth=2)
+    plot!(plt, t, A3; label="A₃", color=:green,  linewidth=2)
+
+    filename = joinpath(run_info.folder, "amplitudes", "$(traj.name).png")
+    mkpath(dirname(filename))
+    savefig(plt, filename)
+    println("  Saved → $filename")
 end

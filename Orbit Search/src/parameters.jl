@@ -81,3 +81,38 @@ function critical_speed(p::Params)
     d = polar(p.theta)
     return maximum([4*abs(dot(d, k1)), 4*abs(dot(d, k2)), 4*abs(dot(d, k3))]) * sqrt(p.mu0)
 end
+
+# =============================================================================
+# Square lattice kappas
+
+function kappas_square(θ; rotated::Bool=false)
+    d = polar(θ)
+    
+    k1 = rotated ? polar(-θ) : polar(0)
+    k2 = rotated ? polar(π/2 - θ) : polar(π/2)
+    
+    # Handle perpendicular case: if k·d ≈ 0, that mode doesn't propagate
+    dot_dk1 = dot(d, k1)
+    dot_dk2 = dot(d, k2)
+    
+    # Use a small threshold to detect perpendicularity
+    if abs(dot_dk1) < 1e-10
+        κ1 = 0.0  # Mode doesn't propagate
+    else
+        κ1 = -1.0 / (4 * dot_dk1^2)
+    end
+    
+    if abs(dot_dk2) < 1e-10
+        κ2 = 0.0  # Mode doesn't propagate
+    else
+        κ2 = -1.0 / (4 * dot_dk2^2)
+    end
+    
+    return k1, k2, κ1, κ2
+end
+
+function critical_speed_square(p::Params)
+    k1, k2, κ1, κ2 = kappas_square(p.theta)
+    d = polar(p.theta)
+    return maximum([4*abs(dot(d, k1)), 4*abs(dot(d, k2))]) * sqrt(p.mu0)
+end
