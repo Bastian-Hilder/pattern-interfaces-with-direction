@@ -26,12 +26,13 @@ const best_search_for_interesting_orbits::Bool   = false
 const do_sweep::Bool                          = false
 const write_energy_data::Bool                 = false
 const write_energy_data_square::Bool          = false
-const write_fixed_point_data_toggle::Bool     = false
-const write_fixed_point_data_square_toggle::Bool = true
+const write_fixed_point_data_toggle::Bool     = true
+const write_fixed_point_data_square_toggle::Bool = false
 const shoot_from_lowest_energy_toggle::Bool   = false
 const shoot_from_lowest_energy_square_toggle::Bool = false
-const shoot_from_all_fps_toggle::Bool         = false
+const shoot_from_all_fps_toggle::Bool         = true
 const shoot_from_all_fps_square_toggle::Bool  = false
+const shoot_specific_orbits_toggle::Bool      = false
  
 # =============================================================================
 # Shooting-based search
@@ -177,6 +178,10 @@ function main()
     if shoot_from_all_fps_square_toggle
         shoot_from_all_fps_square()
     end
+
+    if shoot_specific_orbits_toggle
+        shoot_specific_orbits()
+    end
  
     if write_energy_data
         p = Params(K0=-1.2, K2=-0.6)
@@ -254,22 +259,22 @@ end
 
 function shoot_from_all_fps()
     K0K2_pairs   = [(-3.0, -6.0), (-6.0, -3.0)]
-    theta_values = [0.0, π/18, π/9, π/6 - 0.01]
+    theta_values = [0.0,atan(17/(sqrt(3)*36))]
     mumin     = 1.0
-    mumax     = 1.0
-    step_size = 0.5
+    mumax     = 2.0
+    step_size = 1.0
 
     for (K0, K2) in K0K2_pairs
-        c_crit = critical_speed(Params(K0=K0, K2=K2, beta2=1.0, mu0=1.0, c0=8.0, theta=0.0, T=100.0))
+        c_crit = critical_speed(Params(K0=K0, K2=K2, beta2=1.0, mu0=1.0, c0=32.0, theta=0.0, T=100.0))
         println("\n--- Critical speed for K0=$K0, K2=$K2: $c_crit ---")
-        c0_values = [c_crit - 2.0, c_crit, c_crit + 2.0]
+        c0_values = [c_crit + 4.0]
         for theta in theta_values
             for c0 in c0_values
                 # One results folder per (K0, K2, theta, c0) group
                 run_info = RunInfo(label="shoot_all_fps_K0_$(K0)_K2_$(K2)_theta_$(round(theta*180/π, digits=2))_c0_$(round(c0, digits=1))")
 
                 for mu0 in mumin:step_size:mumax
-                    p_mu = Params(K0 = K0, K2 = K2, beta2 = 1.0, mu0 = mu0, c0 = c0, theta = theta, T = 100.0)
+                    p_mu = Params(K0 = K0, K2 = K2, beta2 = 0.0, mu0 = mu0, c0 = c0, theta = theta, T = 100.0)
                     fps  = instantiate_fixed_points(p_mu)
 
                     non_trivial_fps = filter(fp -> fp.name != "trivial", fps)
@@ -287,7 +292,8 @@ function shoot_from_all_fps()
                                 traj.source, traj.eps, traj.perturbation,
                                 traj.exceeded_threshold, traj.t, traj.u
                             )
-                            create_front_image_shifted(traj_named, run_info, 0.0; color_bar=false, gamma=0.4)
+                            mu0 < 2.0 ? shift = 0.25 : shift = 0.5
+                            create_front_image_shifted(traj_named, run_info, shift; color_bar=false)
                             write_trajectory_dat(traj_named, run_info)
                             plot_amplitudes(traj_named, run_info)
                         end
@@ -304,7 +310,7 @@ end
 function write_fp_data()
     run_info = RunInfo(label="fixed_point_data")
     
-    p = Params(K0=-3.0, K2=-6.0)
+    p = Params(K0=-3.0, K2=-6.0, beta2= 0.0)
     mumin = 0.0
     mumax = 20.0
     step_size = 0.01
@@ -461,6 +467,53 @@ function shoot_from_all_fps_square()
     end
 end
  
+# =============================================================================
+# Shoot from a single fixed point in a given direction and create front image
+
+"""
+    shoot_single_orbit(fp, perturbation, eps, name, run_info)
+
+Shoot one trajectory from `fp` in the direction `perturbation` (pre-normalised)
+scaled by `eps`, save the front image to `run_info.folder`, and return the
+trajectory.
+"""
+function shoot_single_orbit(fp::FixedPoint, perturbation::Vector{Float64},
+                             eps::Float64, name::String, run_info::RunInfo)
+    println("\n--- Shooting orbit '$name' from $(fp.name) ---")
+    traj_raw = find_heteroclinic_orbit(fp, perturbation, eps, name, fp.params.T)
+    traj = TRAJECTORY(
+        name,
+        traj_raw.source, traj_raw.eps, traj_raw.perturbation,
+        traj_raw.exceeded_threshold, traj_raw.t, traj_raw.u
+    )
+    create_front_image_shifted(traj, run_info, 0.0; color_bar=false)
+    write_trajectory_dat(traj, run_info)
+    plot_amplitudes(traj, run_info)
+    return traj
+end
+
+# Hard-coded orbits from run 2026-04-03 (K0=-6.0, K2=-3.0, mu0=1.0, c0=8.0, theta=0°)
+function shoot_specific_orbits()
+    p = Params(K0=-6.0, K2=-3.0, beta2=1.0, mu0=1.0, c0=8.0, theta=0.0, T=100.0)
+    fps = instantiate_fixed_points(p)
+    hexagon = only(filter(fp -> fp.name == "hexagon", fps))
+
+    run_info = RunInfo(label="specific_orbits_K0_$(p.K0)_K2_$(p.K2)_theta_0.0_c0_$(p.c0)")
+
+    orbits = [
+        ("refined-refined-orbit-13121-9291-262178",
+         [0.7736, -0.5706, -0.2268,  0.119,   -0.09411, -0.03795]),
+        ("refined-refined-orbit-13121-51658-952164",
+         [0.7752, -0.566,  -0.233,   0.1192,  -0.09335, -0.03896]),
+        ("refined-refined-orbit-13121-9291-182828",
+         [0.7749, -0.567,  -0.2317,  0.1192,  -0.09351, -0.03875]),
+    ]
+
+    for (name, perturb) in orbits
+        shoot_single_orbit(hexagon, perturb, 0.001, name, run_info)
+    end
+end
+
 # =============================================================================
 # Parameter sweep for fine_search
  
