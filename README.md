@@ -1,4 +1,4 @@
-# Fast-moving pattern interfaces close to a Turing instability in an asymptotic model for the three-dimensional Bénard–Marangoni problem
+# Slow-moving pattern interfaces in general directions for a two-dimensional Swift--Hohenberg-type equation
 
 This repository contains the supplementary code files related to the article "Slow-moving pattern interfaces in general directions for a two-dimensional Swift--Hohenberg-type equation" by Bastian Hilder and Jonas Jansen. The preprint can be found at [arXiv:tbd](https://arxiv.org/abs/tbd).
 
