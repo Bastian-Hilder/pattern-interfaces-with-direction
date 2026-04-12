@@ -8,7 +8,7 @@ We rigorously prove the bifurcation of slow-moving pattern interfaces with gener
 
 ### Selected spreading speed
 
-The calculations for the formal prediction of the spreading speed obtained in Section 1.2 using marginal stability analysis can be found in the Mathematica file "selected-speed.nb" in the folder "Mathematica". It can be viewed using the [Wolfram Player]{https://www.wolfram.com/player/}.
+The calculations for the formal prediction of the spreading speed obtained in Section 1.2 using marginal stability analysis can be found in the Mathematica file "selected-speed.nb" in the folder "Mathematica". It can be viewed using the [Wolfram Player]{https://www.wolfram.com/player}.
 
 ### Numerical computation of heteroclinic orbtis
 
