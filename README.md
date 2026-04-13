@@ -1,6 +1,6 @@
 # Slow-moving pattern interfaces in general directions for a two-dimensional Swift--Hohenberg-type equation
 
-This repository contains the supplementary code files related to the article "Slow-moving pattern interfaces in general directions for a two-dimensional Swift--Hohenberg-type equation" by Bastian Hilder and Jonas Jansen. The preprint can be found at [arXiv:tbd](https://arxiv.org/abs/tbd).
+This repository contains the supplementary code files related to the article "Slow-moving pattern interfaces in general directions for a two-dimensional Swift--Hohenberg-type equation" by Bastian Hilder and Jonas Jansen. The preprint can be found at [arXiv:2604.09530](https://arxiv.org/abs/2604.09530).
 
 ### Abstract
 
