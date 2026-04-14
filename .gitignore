@@ -48,5 +48,5 @@ dist/
 *.tmp
 *.temp
 
-# orbit-search results
-orbit-search_v2/results/
+# Orbit Search results
+Orbit Search/results/

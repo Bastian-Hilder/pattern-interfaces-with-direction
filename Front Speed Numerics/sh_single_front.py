@@ -37,6 +37,16 @@ eps  = 0.3
 mu0  = 1.0
 mu   = eps**2 * mu0
 beta = eps
+beta2 = 1
+
+K0 = -3 
+K2 = -6
+
+# Hexagonal pattern amplitude
+discriminant = beta2**2 - 4*mu0*(K0 + 2*K2)
+Ahex_plus = (-beta2 + np.sqrt(discriminant)) / (2*(K0 + 2*K2))
+Ahex_minus = (-beta2 - np.sqrt(discriminant)) / (2*(K0 + 2*K2))
+Ahex = Ahex_minus  # Choose the physical solution
 
 localisation_factor = 3  # controls transition width at x=0
 front_angle = 0.0  # angle of front direction in radians (0 = along x-axis, π/2 = along y-axis)
@@ -98,7 +108,7 @@ def initial_condition_single_front(x):
     k1 = period * x[0]
     k2 = period * (-0.5*x[0] + 0.5*np.sqrt(3)*x[1])
     k3 = period * (-0.5*x[0] - 0.5*np.sqrt(3)*x[1])
-    hex_pattern = np.cos(k1) + np.cos(k2) + np.cos(k3)
+    hex_pattern = 2*Ahex*(np.cos(k1) + np.cos(k2) + np.cos(k3))
     
     # Rotate coordinates by front_angle
     # Front normal direction
