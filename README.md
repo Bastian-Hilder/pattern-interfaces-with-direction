@@ -10,6 +10,10 @@ We rigorously prove the bifurcation of slow-moving pattern interfaces with gener
 
 The calculations for the formal prediction of the spreading speed obtained in Section 1.2 using marginal stability analysis are available in "selected-speed.nb". The calculations to establish the energy hierarchy in the construction of heteroclinic orbits are available in "energies.nb". Both files can be found in the folder "Mathematica" and can be viewed using the [Wolfram Player](https://www.wolfram.com/player).
 
-### Numerical computation of heteroclinic orbtis
+### Numerical computation of heteroclinic orbits
 
 The numerical implementation to find heteroclinic orbits for the leading-order reduced system on the centre manifold can be found in the folder "Orbit search". The results in the paper can be reproduced by running "main.jl".
+
+### Simulation of spreading speed
+
+The FEM code implementing the dynamics of the Swift–Hohenberg-type equation to obtain an estimate for the spreading speed of a planar interface can be found in the folder "Front Speed Numerics". The implementation uses [dolfinx](https://github.com/FEniCS/dolfinx).
